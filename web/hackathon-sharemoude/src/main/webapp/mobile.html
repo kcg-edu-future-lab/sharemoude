@@ -1,0 +1,102 @@
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=480">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
+<script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js" integrity="sha384-vFJXuSJphROIrBnz7yo7oB41mKfc8JzQZiCq4NCceLEaO4IHwicKwpJf9c9IpFgh" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js" integrity="sha384-alpBpkh1PFOepccYVYDB4do5UnbKysX5WZXm3XxPqe5iKTfUKjNkCk9SaVuEZflJ" crossorigin="anonymous"></script>
+</head>
+<body>
+お願いリスト
+<table class="table">
+<thead>
+<tr>
+  <th style="text-align: center" width="30%">💴</th>
+  <th style="text-align: center" width="70%">🙏</th>
+</tr>
+</thead>
+<tbody id="tbody">
+</tbody>
+</table>
+<script>
+$.ajax({
+	type: "GET",
+	url: "request",
+	success: function(msg){
+		for(var i = 0; i < msg.length; i++){
+			var html = "";
+			var m = msg[i].money;
+			var p = [10000, 5000, 1000, 500, 100, 50, 10, 5, 1];
+			for(var j = 0; j < p.length; j++){
+				var n = Math.floor(m / p[j]);
+				for(var k = 0; k < n; k++){
+					html += "<img width='40' src='" + p[j] + ".png'>";
+				}
+				m = m - n * p[j];
+			}
+			$("#tbody").append(
+					setEvents($("<tr>").attr("data-id", msg[i].id).append($("<td width='20%'>").html(html))
+						.append($("<td width='80%'>").css("word-break", "break-all").text(msg[i].pray)))
+			);
+		}
+		console.log(msg);
+	}
+});
+function setEvents(e){
+	// e = $("#tbody")
+	e.on('mousedown', onTouchStart); //指が触れたか検知
+	e.on('mousemove', onTouchMove); //指が動いたか検知
+	e.on('mouseup', onTouchEnd); //指が離れたか検知
+	e.on('touchstart', onTouchStart); //指が触れたか検知
+	e.on('touchmove', onTouchMove); //指が動いたか検知
+	e.on('touchend', onTouchEnd); //指が離れたか検知
+	return e;
+}
+var direction, position;
+
+//スワイプ開始時の横方向の座標を格納
+function onTouchStart(event) {
+	console.log(event);
+  position = getPosition(event);
+  direction = ''; //一度リセットする
+}
+
+//スワイプの方向（left／right）を取得
+function onTouchMove(event) {
+  if (position - getPosition(event) > 70) { // 70px以上移動しなければスワイプと判断しない
+    direction = 'left'; //左と検知
+  } else if (position - getPosition(event) < -70){  // 70px以上移動しなければスワイプと判断しない
+    direction = 'right'; //右と検知
+  }
+}
+
+function onTouchEnd(e) {
+	if (direction == 'right'){
+		var t = $(e.currentTarget);
+		console.log(t.attr("data-id"));
+		$.ajax({
+			type: "POST",
+			data: "" + t.attr("data-id"),
+			url: "remove",
+			success: function(msg){
+				t.remove();
+			}
+		});
+	} else if (direction == 'left'){
+	}
+}
+//横方向の座標を取得
+function getPosition(event) {
+	if(event.originalEvent.touches)
+		return event.originalEvent.touches[0].pageX;
+	else
+		return event.offsetX;
+}
+
+
+
+</script>
+
+</body>
+</html>

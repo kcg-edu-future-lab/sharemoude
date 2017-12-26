@@ -1,0 +1,115 @@
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<script type="text/javascript" src="https://code.jquery.com/jquery-1.12.4.js"></script>
+<script type="text/javascript" src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<style>
+#map {
+	height: 600px;
+	width: 100%;
+}
+</style>
+</head>
+<body>
+<h2>Share詣</h2>
+<div id="dialog">
+<form>
+<label for="pray">お願い</label>
+<br>
+<input id="pray" type="text" size="30" value="世界が平和でありますように">
+<br>
+<label for="money">お賽銭</label>
+<br>
+<input id="money" type="text" value="1000">
+</form>
+</div>
+<div id="map"></div>
+<img id="monitor">
+<script>
+var myId = -1;
+function initMap(){
+	var heian = new google.maps.LatLng({lat: 35.016403517538876, lng: 135.781831741333});
+	var map = new google.maps.Map(document.getElementById('map'), {
+		zoom: 15,
+		center: heian
+	});
+	for(var i = 0; i < 20; i++){
+		var lat = (35.016403517538876 - 35.01541939160504) * Math.random() + 35.01541939160504;
+		var lng = (135.7830548286438 - 135.781831741333) * Math.random() + 135.781831741333;
+		var latLng = new google.maps.LatLng({lat: lat, lng: lng});
+		var marker = new google.maps.Marker({
+			position: latLng,
+			map: map
+		});
+		marker.addListener('click', function(e){
+			$("#dialog").dialog('open');
+		});
+		var buttons = [
+			{
+				text: "お願いする",
+				click: function(){
+					$.ajax({
+						type: "POST",
+						url: "request",
+						data: JSON.stringify({
+							pray: $("#pray").val(),
+							money: $("#money").val()
+						}),
+						success: function(msg){
+							console.log("not: " + msg);
+							myId = parseInt(msg);
+						}
+					});
+					$(this).dialog('close');
+				}
+			},
+			{
+				text: "やめる",
+				click: function(){ $(this).dialog('close'); }
+			}
+		];
+		$("#dialog").dialog({
+			autoOpen: false,
+			title: "のっかる",
+			buttons: buttons,
+//			close:   function() { $(this).remove(); }
+		});
+	}
+	map.addListener('click', function(e) {
+		placeMarkerAndPanTo(e.latLng, map);
+	});
+	var url = new URL(window.location.href);
+	var ws = new WebSocket(
+			url.origin.replace("http:", "ws:").replace("https:", "wss:") +
+			"/" + url.pathname.split("/")[1] + "/notification/remotes");
+	ws.onopen = () => {
+		console.log("wsopen");
+	};
+	ws.onmessage = m => {
+		if(m.data.startsWith("img:")){
+			$("#monitor").attr("src", m.data.substring(4));
+		} else{
+			var d = JSON.parse(m.data);
+			console.log(d);
+			if(d.operation == "remove" && myId == d.value){
+				alert("お願いが届きました")
+			}
+		}
+	};
+}
+
+function placeMarkerAndPanTo(latLng, map) {
+	var marker = new google.maps.Marker({
+		position: latLng,
+		map: map
+	});
+	map.panTo(latLng);
+	console.log(latLng.lat() + "," + latLng.lng());
+}
+</script>
+<script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDtCFRj1trpjpM6owvwZBvKCqbW53db9ao&callback=initMap">
+    </script>
+</body>
+</html>

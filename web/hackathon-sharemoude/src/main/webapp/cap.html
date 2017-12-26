@@ -1,0 +1,85 @@
+<html>
+<head>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
+<script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js" integrity="sha384-vFJXuSJphROIrBnz7yo7oB41mKfc8JzQZiCq4NCceLEaO4IHwicKwpJf9c9IpFgh" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js" integrity="sha384-alpBpkh1PFOepccYVYDB4do5UnbKysX5WZXm3XxPqe5iKTfUKjNkCk9SaVuEZflJ" crossorigin="anonymous"></script>
+</head>
+<body>
+<button id="start">Start</button>
+<br />
+<video id="local_video" autoplay style="width: 320px; height: 240px; border: 1px solid black;"></video>
+<canvas id="canvas" width="320px" height="240px"></canvas>
+<br />
+<div id="log"></div>
+</body>
+<script type="text/javascript">
+	let localVideo = document.getElementById('local_video');
+	let localStream;
+
+	var stream = null;
+	$(()=>{
+		$("#start").click(()=>{
+			if(localStream){
+				localStream.getVideoTracks()[0].stop();
+				localStream = null;
+			} else{
+				startVideo();
+			}
+		});
+	});
+
+	navigator.mediaDevices.enumerateDevices()
+		.then(devices => devices.forEach(d => console.log(d)));
+	// start local video
+	function startVideo() {
+		navigator.mediaDevices.enumerateDevices()
+			.then(devices => {
+				var device = null;
+				devices.forEach(d => {
+					$("#log").append(d.kind + "<br>");
+					if(d.kind == "videoinput") device = d.deviceId;
+				});
+				navigator.mediaDevices.getUserMedia(
+					{video: {deviceId: { exact: device }}, audio: false}
+				).then(function (stream) { // success
+					localStream = stream;
+					localVideo.src = window.URL.createObjectURL(localStream);
+					drawVideoCapture();
+				}).catch(function (error) { // error
+					console.error('getUserMedia error:', error);
+				});
+			});
+	}
+	var video = document.querySelector('#local_video');
+	var canvas = document.querySelector('#canvas');
+	var ctx = canvas.getContext('2d');
+//	canvas.width *= devicePixelRatio;
+//	canvas.height *= devicePixelRatio;
+//	canvas.style.width = String(canvas.width / devicePixelRatio) + "px";
+//	canvas.style.height = String(canvas.height / devicePixelRatio) + "px";
+	ctx.scale(1 / devicePixelRatio, 1 / devicePixelRatio);
+
+	var url = new URL(window.location.href);
+	var ws = new WebSocket(
+			url.origin.replace("http:", "ws:").replace("https:", "wss:") +
+			"/" + url.pathname.split("/")[1] + "/notification/mobiles");
+	ws.onopen = () => {
+		console.log("wsopen");
+	};
+	ws.onmessage = m => {
+	};
+	var c = 0;
+	function drawVideoCapture(){
+		ctx.drawImage(video, 0, 0);
+		c++;
+		if(localStream == null) return;
+		if(Math.floor(c % 1) == 0){
+			var du = canvas.toDataURL('image/jpeg');
+			ws.send("img:" + du);
+		}
+		requestAnimationFrame(drawVideoCapture);
+	}
+</script>
+</body>
+</html>
