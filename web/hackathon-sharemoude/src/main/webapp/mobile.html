@@ -44,31 +44,31 @@ $.ajax({
 	}
 });
 function setEvents(e){
-	// e = $("#tbody")
-	e.on('mousedown', onTouchStart); //指が触れたか検知
-	e.on('mousemove', onTouchMove); //指が動いたか検知
-	e.on('mouseup', onTouchEnd); //指が離れたか検知
-	e.on('touchstart', onTouchStart); //指が触れたか検知
-	e.on('touchmove', onTouchMove); //指が動いたか検知
-	e.on('touchend', onTouchEnd); //指が離れたか検知
+	// マウスでのスワイプ(ドラッグ)の検知
+	e.on('mousedown', onTouchStart);
+	e.on('mousemove', onTouchMove);
+	e.on('mouseup', onTouchEnd);
+	// タッチ動作でのスワイプの検知
+	e.on('touchstart', onTouchStart);
+	e.on('touchmove', onTouchMove);
+	e.on('touchend', onTouchEnd);
 	return e;
 }
 var direction, position;
 
 //スワイプ開始時の横方向の座標を格納
 function onTouchStart(event) {
-	console.log(event);
-  position = getPosition(event);
-  direction = ''; //一度リセットする
+	position = getPosition(event);
+	direction = ''; //一度リセットする
 }
 
 //スワイプの方向（left／right）を取得
 function onTouchMove(event) {
-  if (position - getPosition(event) > 70) { // 70px以上移動しなければスワイプと判断しない
-    direction = 'left'; //左と検知
-  } else if (position - getPosition(event) < -70){  // 70px以上移動しなければスワイプと判断しない
-    direction = 'right'; //右と検知
-  }
+	if (position - getPosition(event) > 70) { // 70px以上移動しなければスワイプと判断しない
+		direction = 'left'; //左と検知
+	} else if (position - getPosition(event) < -70){  // 70px以上移動しなければスワイプと判断しない
+		direction = 'right'; //右と検知
+	}
 }
 
 function onTouchEnd(e) {
@@ -86,6 +86,7 @@ function onTouchEnd(e) {
 	} else if (direction == 'left'){
 	}
 }
+
 //横方向の座標を取得
 function getPosition(event) {
 	if(event.originalEvent.touches)
@@ -93,9 +94,6 @@ function getPosition(event) {
 	else
 		return event.offsetX;
 }
-
-
-
 </script>
 
 </body>
